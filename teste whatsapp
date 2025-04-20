@@ -1,0 +1,34 @@
+import speech_recognition as sr
+import pywhatkit
+
+def ouvir_comando():
+    reconhecedor = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Fale o comando (ex: enviar mensagem para Maria dizendo oi)")
+        audio = reconhecedor.listen(source)
+
+    try:
+        comando = reconhecedor.recognize_google(audio, language='pt-BR')
+        print(f"Você disse: {comando}")
+        return comando.lower()
+    except:
+        print("Erro no reconhecimento de voz.")
+        return ""
+
+def enviar_mensagem(comando):
+    if "enviar mensagem para" in comando:
+        partes = comando.split("enviar mensagem para")[1].strip()
+        if "dizendo" in partes:
+            nome_contato, mensagem = partes.split("dizendo")
+            nome_contato = nome_contato.strip()
+            mensagem = mensagem.strip()
+            print(f"Enviando para {nome_contato}: {mensagem}")
+            pywhatkit.sendwhatmsg_to_friend(nome_contato, mensagem)
+        else:
+            print("Formato de comando incorreto.")
+    else: 
+        print("Nenhum comando de envio detectado.")
+
+# Executa
+comando = ouvir_comando()
+enviar_mensagem(comando)
