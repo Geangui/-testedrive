@@ -1,34 +1,25 @@
-import speech_recognition as sr
-import pywhatkit
+#!/bin/bash
 
-def ouvir_comando():
-    reconhecedor = sr.Recognizer()
-    with sr.Microphone() as source:
-        print("Fale o comando (ex: enviar mensagem para Maria dizendo oi)")
-        audio = reconhecedor.listen(source)
+# Verifica se o número de parâmetros passados está correto
+if [ "$#" -ne 2 ]; then
+    echo "Uso: $0 \"Nome do Contato\" \"Mensagem\""
+    exit 1
+fi
 
-    try:
-        comando = reconhecedor.recognize_google(audio, language='pt-BR')
-        print(f"Você disse: {comando}")
-        return comando.lower()
-    except:
-        print("Erro no reconhecimento de voz.")
-        return ""
+# Nome do contato
+CONTACT_NAME="$1"
 
-def enviar_mensagem(comando):
-    if "enviar mensagem para" in comando:
-        partes = comando.split("enviar mensagem para")[1].strip()
-        if "dizendo" in partes:
-            nome_contato, mensagem = partes.split("dizendo")
-            nome_contato = nome_contato.strip()
-            mensagem = mensagem.strip()
-            print(f"Enviando para {nome_contato}: {mensagem}")
-            pywhatkit.sendwhatmsg_to_friend(nome_contato, mensagem)
-        else:
-            print("Formato de comando incorreto.")
-    else: 
-        print("Nenhum comando de envio detectado.")
+# Mensagem a ser enviada
+MESSAGE="$2"
 
-# Executa
-comando = ouvir_comando()
-enviar_mensagem(comando)
+# Encontrar o número do contato (você precisa configurar manualmente ou usar uma base de dados local de números)
+NUMBER=$(termux-contact-list | jq -r ".[] | select(.name | test(\"$CONTACT_NAME\")) | .phone")
+
+# Se o número não for encontrado, mostrar uma mensagem de erro
+if [ -z "$NUMBER" ]; then
+    echo "Contato não encontrado!"
+    exit 1
+fi
+
+# Enviar a mensagem usando o WhatsApp
+am start -a android.intent.action.SENDTO -d "smsto:$NUMBER" --es "sms_body" "$MESSAGE" --ez "exit_on_sent" true
